@@ -44,14 +44,6 @@ const Home = (): JSX.Element => {
     loadProducts();
   }, []);
 
-  // useEffect(() => {
-  //   products.forEach(product => {
-  //     product.amountInCart = (
-  //       cart.find((productInCart) => product.id === productInCart.id)?.amount ?? 0
-  //     );
-  //   })
-  // }, [cart, products])
-
   function handleAddProduct(id: number) {
     addProduct(id);
   }

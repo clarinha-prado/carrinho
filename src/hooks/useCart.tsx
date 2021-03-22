@@ -47,6 +47,11 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
         // obter qtde em estoque
         await api.get('stock/' + productId)
           .then((response) => {
+
+            if (response.status === 404) {
+              throw new Error('Erro na adição do produto');
+            }
+
             let qtdStock: Stock = response.data;
 
             // se a qtde selecionada > qtde em estoque
@@ -56,9 +61,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
               // se tiver a qtde solicitada no estoque
               existingProduct.amount += 1;
-              existingProduct.formattedSubTotal = formatPrice(
-                existingProduct.price * existingProduct.amount
-              );
               setCart(cart.slice());
             }
           })
@@ -75,9 +77,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
               let selectedProduct: CartProduct = response.data;
 
               selectedProduct.amount = 1;
-              selectedProduct.formattedPrice = formatPrice(selectedProduct.price);
-              selectedProduct.formattedSubTotal =
-                formatPrice(selectedProduct.price * selectedProduct.amount);
+              formatPrice(selectedProduct.price * selectedProduct.amount);
               setCart([
                 ...cart,
                 selectedProduct
@@ -134,11 +134,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
               if (existingProduct !== undefined) {
                 // atualiza a qtde
                 existingProduct.amount = amount;
-                existingProduct.formattedSubTotal =
-                  formatPrice(existingProduct.price * existingProduct.amount);
+                // atualiza carrinho no estado 
+                setCart(cart.slice());
               }
-              // atualiza carrinho no estado 
-              setCart(cart.slice());
             }
           }
         })
