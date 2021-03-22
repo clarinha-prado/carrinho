@@ -23,24 +23,25 @@ const Cart = (): JSX.Element => {
   // const cartFormatted = cart.map(product => ({
   //   // TODO
   // }))
-  // const total =
-  //   formatPrice(
-  //     cart.reduce((sumTotal, product) => {
-  //       // TODO
-  //     }, 0)
-  //   )
+
+  const total =
+    formatPrice(
+      cart.reduce((sumTotal, product) => {
+        return sumTotal + (product.amount * product.price);
+      }, 0)
+    )
 
   function handleProductIncrement(product: Product) {
     updateProductAmount({
       productId: product.id,
-      amount: product.amount++
+      amount: product.amount + 1
     });
   }
 
   function handleProductDecrement(product: Product) {
     updateProductAmount({
       productId: product.id,
-      amount: product.amount--
+      amount: product.amount - 1
     });
   }
 
@@ -70,14 +71,14 @@ const Cart = (): JSX.Element => {
                 </td>
                 <td>
                   <strong>{product.title}</strong>
-                  <span>{product.price}</span>
+                  <span>{product.formattedPrice}</span>
                 </td>
                 <td>
                   <div>
                     <button
                       type="button"
                       data-testid="decrement-product"
-                      // disabled={product.amount <= 1}
+                      disabled={product.amount <= 1}
                       onClick={() => handleProductDecrement(product)}
                     >
                       <MdRemoveCircleOutline size={20} />
@@ -98,7 +99,7 @@ const Cart = (): JSX.Element => {
                   </div>
                 </td>
                 <td>
-                  <strong>{product.price * product.amount}</strong>
+                  <strong>{product.formattedSubTotal}</strong>
                 </td>
                 <td>
                   <button
@@ -121,7 +122,7 @@ const Cart = (): JSX.Element => {
 
         <Total>
           <span>TOTAL</span>
-          <strong>R$ 359,80</strong>
+          <strong>{total}</strong>
         </Total>
       </footer>
     </Container>

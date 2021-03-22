@@ -1,4 +1,5 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { formatPrice } from '../util/format';
+import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { CartProduct, Stock } from '../types';
@@ -32,46 +33,59 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
+  useEffect(() => {
+    localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
+  }, [cart]);
+
   const addProduct = async (productId: number) => {
     try {
-      // busca produto solicitado na base de produtos
-      api.get('products/' + productId)
-        .then((response) => {
 
-          // converte retorno para tipo CartProduct
-          let selectedProduct: CartProduct = response.data;
+      // se o produto já estiver no carrinho
+      const existingProduct = cart.find((product) => product.id === productId);
+      if (existingProduct !== undefined) {
 
-          console.log('cart: ' + JSON.stringify(cart));
+        // obter qtde em estoque
+        await api.get('stock/' + productId)
+          .then((response) => {
+            let qtdStock: Stock = response.data;
 
-          // se o produto já estiver no carrinho
-          const existingProduct = cart.find((product) => product.id === productId);
-          if (existingProduct !== undefined) {
+            // se a qtde selecionada > qtde em estoque
+            if (existingProduct.amount + 1 > qtdStock.amount) {
+              toast.error('Quantidade solicitada fora de estoque');
+            } else {
 
-            // obter qtde em estoque
-            api.get('stock/' + productId)
-              .then((response) => {
-                let qtdStock: Stock = response.data;
+              // se tiver a qtde solicitada no estoque
+              existingProduct.amount += 1;
+              existingProduct.formattedSubTotal = formatPrice(
+                existingProduct.price * existingProduct.amount
+              );
+              setCart(cart.slice());
+            }
+          })
+      } else {
+        // se o produto não estiver no carrinho, busca na base de produtos
+        await api.get('products/' + productId)
+          .then((response) => {
 
-                // se a qtde selecionada > qtde em estoque
-                if (existingProduct.amount + 1 > qtdStock.amount) {
-                  toast.error('Quantidade solicitada fora de estoque');
-                } else {
-                  existingProduct.amount += 1;
-                  console.log('nova qtde: ' + existingProduct.amount);
-                }
-              })
-          } else {
-            // se o produto não estiver no carrinho, acrescentar o produto no carrinho
-            console.log('produto novo!');
+            // se o produto não estiver na base de produtos, dá erro
+            if (response.status === 404) {
+              throw new Error('Erro na adição do produto');
+            } else {
+              // converte retorno para tipo CartProduct
+              let selectedProduct: CartProduct = response.data;
 
-            selectedProduct.amount = 1;
-            console.log(selectedProduct);
-            setCart([
-              ...cart,
-              selectedProduct
-            ]);
-          }
-        })
+              selectedProduct.amount = 1;
+              selectedProduct.formattedPrice = formatPrice(selectedProduct.price);
+              selectedProduct.formattedSubTotal =
+                formatPrice(selectedProduct.price * selectedProduct.amount);
+              setCart([
+                ...cart,
+                selectedProduct
+              ]);
+            }
+          })
+      }
+
     } catch {
       toast.error('Erro na adição do produto');
     }
@@ -83,6 +97,8 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       const existingProduct = cart.find((product) => product.id === productId);
       if (existingProduct !== undefined) {
         setCart(cart.filter((product) => product.id !== productId));
+      } else {
+        throw new Error('Erro na remoção do produto');
       }
     } catch {
       toast.error('Erro na remoção do produto');
@@ -94,9 +110,38 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     amount,
   }: UpdateProductAmount) => {
     try {
+      // se nova qtde <= 0 sai da função
       if (amount <= 0) {
         return;
       }
+
+      // obter qtde em estoque
+      await api.get('stock/' + productId)
+        .then((response) => {
+
+          if (response.status === 404) {
+            throw new Error('Erro na alteração de quantidade do produto');
+          } else {
+            // obtém qtde em estoque
+            let qtdStock: Stock = response.data;
+
+            // se a nova qtde > qtde em estoque
+            if (amount > qtdStock.amount) {
+              toast.error('Quantidade solicitada fora de estoque');
+            } else {
+              // busca produto no carrinho
+              const existingProduct = cart.find((product) => product.id === productId);
+              if (existingProduct !== undefined) {
+                // atualiza a qtde
+                existingProduct.amount = amount;
+                existingProduct.formattedSubTotal =
+                  formatPrice(existingProduct.price * existingProduct.amount);
+              }
+              // atualiza carrinho no estado 
+              setCart(cart.slice());
+            }
+          }
+        })
     } catch {
       toast.error('Erro na alteração de quantidade do produto');
     }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MdAddShoppingCart } from 'react-icons/md';
 
 import { ProductList } from './styles';
@@ -15,24 +15,18 @@ interface Product {
 
 interface ProductFormatted extends Product {
   priceFormatted: string;
-}
-
-interface CartItemsAmount {
-  [key: number]: number;
+  amountInCart: number;
 }
 
 const Home = (): JSX.Element => {
   const [products, setProducts] = useState<ProductFormatted[]>([]);
   const { addProduct, cart } = useCart();
 
-  // const cartItemsAmount = cart.reduce((sumAmount, product) => {
-  //   // TODO
-  // }, {} as CartItemsAmount)
-
   useEffect(() => {
     async function loadProducts() {
 
-      api.get('products')
+      // obtém lista de produtos disponíveis
+      await api.get('products')
         .then((response) => {
 
           let products: ProductFormatted[] = response.data;
@@ -49,6 +43,14 @@ const Home = (): JSX.Element => {
 
     loadProducts();
   }, []);
+
+  // useEffect(() => {
+  //   products.forEach(product => {
+  //     product.amountInCart = (
+  //       cart.find((productInCart) => product.id === productInCart.id)?.amount ?? 0
+  //     );
+  //   })
+  // }, [cart, products])
 
   function handleAddProduct(id: number) {
     addProduct(id);
@@ -69,7 +71,7 @@ const Home = (): JSX.Element => {
             >
               <div data-testid="cart-product-quantity">
                 <MdAddShoppingCart size={16} color="#FFF" />
-                {/* {cartItemsAmount[product.id] || 0} */} 2
+                {cart.find((productInCart) => product.id === productInCart.id)?.amount ?? 0}
               </div>
 
               <span>ADICIONAR AO CARRINHO</span>

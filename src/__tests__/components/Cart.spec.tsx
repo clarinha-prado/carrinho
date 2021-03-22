@@ -1,7 +1,7 @@
 import { render, fireEvent } from '@testing-library/react';
 
 import { useCart } from '../../hooks/useCart';
-import Cart from '../../pages/Cart';
+import Cart from '../../components/Cart';
 
 const mockedRemoveProduct = jest.fn();
 const mockedUpdateProductAmount = jest.fn();
