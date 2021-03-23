@@ -1,5 +1,5 @@
 import { formatPrice } from '../util/format';
-import { createContext, ReactNode, useContext, useState, useEffect } from 'react';
+import { createContext, ReactNode, useContext, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { CartProduct, Stock } from '../types';
@@ -33,10 +33,6 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
-  useEffect(() => {
-    localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
-  }, [cart]);
-
   const addProduct = async (productId: number) => {
     try {
 
@@ -61,7 +57,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
               // se tiver a qtde solicitada no estoque
               existingProduct.amount += 1;
-              setCart(cart.slice());
+              const updatedCart = cart.slice();
+              setCart(updatedCart);
+              localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart));
             }
           })
       } else {
@@ -78,10 +76,12 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
               selectedProduct.amount = 1;
               formatPrice(selectedProduct.price * selectedProduct.amount);
-              setCart([
+              const updatedCart = [
                 ...cart,
                 selectedProduct
-              ]);
+              ];
+              setCart(updatedCart);
+              localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart));
             }
           })
       }
@@ -96,7 +96,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
       // se o produto estiver no carrinho
       const existingProduct = cart.find((product) => product.id === productId);
       if (existingProduct !== undefined) {
-        setCart(cart.filter((product) => product.id !== productId));
+        const updatedCart = cart.filter((product) => product.id !== productId);
+        setCart(updatedCart);
+        localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart));
       } else {
         throw new Error('Erro na remoção do produto');
       }
@@ -135,7 +137,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
                 // atualiza a qtde
                 existingProduct.amount = amount;
                 // atualiza carrinho no estado 
-                setCart(cart.slice());
+                const updatedCart = cart.slice();
+                setCart(updatedCart);
+                localStorage.setItem('@RocketShoes:cart', JSON.stringify(updatedCart));
               }
             }
           }
